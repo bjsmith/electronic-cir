@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+    <title>Signature</title>
+    <style>
+        #signature-pad {
+            border: 1px solid #000;
+            background-color: #fff;
+            width: 700px;
+            height: 150px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Please Sign Below</h1>
+    <img src="data:image/png;base64,{{ img_data }}" alt="Petition Image"><br>
+
+    <canvas id="signature-pad" width="700" height="150"></canvas><br>
+    <button id="clear-btn">Clear</button>
+    <button id="save-btn">Save Signature</button>
+
+    <script>
+        var canvas = document.getElementById('signature-pad');
+        var ctx = canvas.getContext('2d');
+        var drawing = false;
+
+        canvas.addEventListener('mousedown', function(e) {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        });
+        canvas.addEventListener('mousemove', function(e) {
+            if (drawing) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            }
+        });
+        canvas.addEventListener('mouseup', function(e) {
+            drawing = false;
+        });
+        canvas.addEventListener('mouseout', function(e) {
+            drawing = false;
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        document.getElementById('save-btn').addEventListener('click', function() {
+            var dataURL = canvas.toDataURL();
+            // Send dataURL and image_id to the server via POST
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '{{ url_for('save_signature') }}', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    // Redirect to display the signed petition
+                    window.location.href = '{{ url_for('signed_petition') }}?image_id=' + encodeURIComponent('{{ image_id }}');
+                } else {
+                    alert('An error occurred while saving the signature.');
+                }
+            };
+            xhr.send(JSON.stringify({img_data: dataURL, image_id: '{{ image_id }}'}));
+        });
+    </script>
+</body>
+</html>
